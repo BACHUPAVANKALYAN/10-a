@@ -8,7 +8,7 @@ const jwt = require("jsonwebtoken");
 const databasePath = path.join(__dirname, "covid19IndiaPortal.db");
 const app = express();
 app.use(express.json());
-const db = null;
+let db = null;
 
 const initializeDatabaseAndServer = async () => {
   try {
@@ -25,6 +25,7 @@ const initializeDatabaseAndServer = async () => {
   }
 };
 initializeDatabaseAndServer();
+
 const convertStatedbobjecttoResponseobject = (dbObject) => {
   return {
     stateId: dbObject.state_id,
@@ -65,9 +66,9 @@ const authenticationToken = (request, response, next) => {
   }
 };
 
-app.post("/login", authenticationToken, async (request, require) => {
+app.post("/login", authenticationToken, async (request, response) => {
   const { username, password } = request.body;
-  const userChecklogin = `SELECT * FROM user WHERE usename='${username}';`;
+  const userChecklogin = `SELECT * FROM user WHERE username='${username}';`;
   const postlogin = await db.get(userChecklogin);
   if (postlogin === undefined) {
     response.status(400);
@@ -94,7 +95,8 @@ app.get("/states/", authenticationToken, async (request, response) => {
     )
   );
 });
-app.get("/states/stateId/", authenticationToken, async (request, response) => {
+app.get("/states/:stateId/", authenticationToken, async (request, response) => {
+  const { stateId } = request.params;
   const getStatesquery = `SELECT * FROM state WHERE state_id={stateId};`;
   const stateArray = await db.get(getStatesquery);
   response.send(convertStatedbobjecttoResponseobject(stateArray));
@@ -106,7 +108,7 @@ app.post("/districts/", authenticationToken, async (request, response) => {
   response.send("District Successfully Added");
 });
 app.get(
-  "/districts/districtsId/",
+  "/districts/:districtId/",
   authenticationToken,
   async (request, response) => {
     const { districtId } = request.params;
@@ -116,7 +118,7 @@ app.get(
   }
 );
 app.delete(
-  "/districts/districtsId/",
+  "/districts/:districtId/",
   authenticationToken,
   async (request, response) => {
     const { districtId } = request.params;
@@ -126,7 +128,7 @@ app.delete(
   }
 );
 app.put(
-  "/districts/districtId/",
+  "/districts/:districtId/",
   authenticationToken,
   async (request, response) => {
     const { districtId } = request.params;
@@ -139,7 +141,7 @@ app.put(
       deaths,
     } = request.body;
     const updatedistrict = `UPDATE district SET district_name='${districtName}',${stateId},${cases},${cured},${active},${deaths} WHERE district_id='${districtId}'`;
-    const updistrictid = await db.run(updistrictid);
+    const updistrictid = await db.run(updatedistrict);
     response.send("District Details Updated");
   }
 );
