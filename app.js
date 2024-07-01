@@ -66,23 +66,27 @@ const authenticationToken = (request, response, next) => {
   }
 };
 
-app.post("/login", authenticationToken, async (request, response) => {
+app.post("/login/", async (request, response) => {
   const { username, password } = request.body;
   const userChecklogin = `SELECT * FROM user WHERE username='${username}';`;
   const postlogin = await db.get(userChecklogin);
+
   if (postlogin === undefined) {
     response.status(400);
     response.send("Invalid user");
   } else {
     const isValidpassword = await bcrypt.compare(password, postlogin.password);
-  }
-  if (isValidpassword === true) {
-    const payload = { username: username };
-    const jwtToken = jwt.sign(payload, "MY_SECRET_TOKEN");
-    response.send({ jwtToken });
-  } else {
-    response.status(400);
-    response.send("Invalid password");
+
+    if (isValidpassword === true) {
+      const payload = {
+        username: username,
+      };
+      const jwtToken = jwt.sign(payload, "MY_SECRET_TOKEN");
+      response.send({ jwtToken });
+    } else {
+      response.status(400);
+      response.send("Invalid password");
+    }
   }
 });
 
@@ -97,7 +101,7 @@ app.get("/states/", authenticationToken, async (request, response) => {
 });
 app.get("/states/:stateId/", authenticationToken, async (request, response) => {
   const { stateId } = request.params;
-  const getStatesquery = `SELECT * FROM state WHERE state_id={stateId};`;
+  const getStatesquery = `SELECT * FROM state WHERE state_id=${stateId};`;
   const stateArray = await db.get(getStatesquery);
   response.send(convertStatedbobjecttoResponseobject(stateArray));
 });
@@ -140,7 +144,7 @@ app.put(
       active,
       deaths,
     } = request.body;
-    const updatedistrict = `UPDATE district SET district_name='${districtName}',${stateId},${cases},${cured},${active},${deaths} WHERE district_id='${districtId}'`;
+    const updatedistrict = `UPDATE district SET district_name='${districtName}',state_id=${stateId},cases=${cases},cured=${cured},active=${active},deaths=${deaths} WHERE district_id='${districtId}'`;
     const updistrictid = await db.run(updatedistrict);
     response.send("District Details Updated");
   }
